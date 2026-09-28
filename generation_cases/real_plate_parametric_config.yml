@@ -1,0 +1,32 @@
+# Long explanation: these models are completely unsuitable to do real sensitivity study. Most of the parameter are
+# hyper constrained (for example, the rheology of the mantle is completely useless, everything is driven by the internal
+# wall boundary condition). This model is the geological version of a cheap thermal-exchanger in which a Pipe of hot honey
+# is in direct contact with a pool of choccolate, separate by a infinite small glass wall. After I tried several parameters 
+# I gave up, but I worked to have this experimental design. I know, in the paper I will recast this concept in a more appropriate manner
+# by the end there are three main controlling parameters: age, velocity and decoupling. Shear heating, unless using the intellectual hoax of an 
+# effective friction coefficient (i.e., let's use the friction till the core) is self-adjusting. Mantle rheology: does not matter within the errors
+# of the material (Eact ... ). Maybe the stress exponent can play a role, but again, unless to do unrealistic hyper-plasticity, is not going to
+# give reasonable difference. 
+
+Mexico: 
+  age: [12.0, 15.0]
+  vc: [4.6, 6.6]
+  decoupling: [60, 90]
+  Tp: [1350,1450]
+  n_cases: 3500
+Japan:
+  age: [110,120]
+  vc: [7,10]
+  decoupling: [60, 90]
+  Tp: [1350,1450]
+  n_cases: 3500
+steady_s_sensitivity: 
+  age: [30.0, 110.0]
+  vc: [3.0, 10.0]
+  Tp: [1350,1425]
+  n_cases: 7000 
+td_s_sensitivity: 
+  age: [30,110.0]
+  vc: [3.0,10.0]
+  Tp: 1350
+  n_cases: 500 

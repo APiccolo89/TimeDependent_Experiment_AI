@@ -1,0 +1,37 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+
+    {
+      "name": "Sensitivity Test - case 0",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/script_run_stoned.py",
+      "args": [
+        "--name_suite", "TDexp",
+        "--name_test", "case_debug",
+        "--potential_temperature", "1350",
+        "--age_plate", "30",
+        "--velocity_slab", "5.0",
+        "--no_linear_wedge", "1",
+      ],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Post_Process",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/script_post_processing.py",
+      "args": [
+        "--name_suite", "TDexp",
+        "--name_test", "case_debug",
+        "--potential_temperature", "1350",
+        "--age_plate", "30",
+        "--velocity_slab", "5.0",
+        "--no_linear_wedge", "1",
+      ],
+      "console": "integratedTerminal"
+    }
+
+  ]
+}
