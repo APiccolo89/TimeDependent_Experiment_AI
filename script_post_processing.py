@@ -17,22 +17,19 @@ package.
 
 """
 
+import argparse
 from importlib.resources import files
 from pathlib import Path
-import argparse
+
+import h5py
+import matplotlib.pyplot as plt
 import numpy as np
-from mpi4py import MPI
+from numpy.typing import NDArray
 
 import post_process_module.global_var as _GVARIABLES_
-
 from post_process_module.data_extractor import Test
 from post_process_module.utils import choose_material_properties
 
-from numpy.typing import NDArray 
-
-import matplotlib.pyplot as plt
-
-import h5py
 # --- 
 # --- 
 _DICTIONARY_ATTRIBUTES_H5_ = {'vc':'Velocity of convergence of the slab [cm/yr]',
@@ -155,11 +152,10 @@ def read_test_data():
     test = Test(pt,td=True)
     # Extract the array of phase and temp 
     # This array has a shape of [r_grid,r_grid,n_timestep]
-    
-    Ph = test.get_phase_field(vc=arguments['vc'],oc_tk=6.0,dc=-80.0) 
-    
-    Temp = test.interpolate_data('TimeDependent.Temp',True)
-    # 
+    test.update_temp_phase_field(td=True
+                                 ,flag_full=True
+                                 ,vc=arguments['vc']
+                                 ,oc_tk=6.0,dc=80.0)
     Xi = test.MeshData.Xi
     
     Yi = test.MeshData.Yi 
@@ -176,7 +172,7 @@ def read_test_data():
             del f[arguments['name_test']]
         
         grp = f.create_group(arguments['name_test'])
-        for key in arguments.keys():
+        for key in arguments:
             value = arguments[key]
             if isinstance(value, str):
                 grp.create_dataset(
@@ -189,8 +185,8 @@ def read_test_data():
             else:
                 save_data_(grp,value,key)
                 print(f"creating {key} for {arguments['name_test']}")
-        save_data_(grp,Ph,'Phase')
-        save_data_(grp,Temp,'Temp')
+        save_data_(grp,test.Phase,'Phase')
+        save_data_(grp,test.temp,'Temp')
         save_data_(grp,Xi,'Xi')
         save_data_(grp,Yi,'Yi')
         save_data_(grp,time,'time_vector')

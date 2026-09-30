@@ -2,22 +2,25 @@
 Module that extract the data from the output of StonedFEniCSx
 """
 
+import dataclasses
 import os
 import warnings
+from dataclasses import InitVar, dataclass, field
+from pathlib import Path
 
-import dataclasses
-from dataclasses import field,InitVar,dataclass
 import h5py
 import numpy as np
 from numpy.typing import NDArray
-from pathlib import Path
-
-from .global_var import _R_GRID_,_T_CUT_OFF_LIT,_V_CONVERSION_KM_MYR_,_POINT_FILTER_OVERRIDING
-
-import numpy as np
 from scipy.interpolate import griddata
 from shapely import contains_xy as scontains_xy
 from shapely.geometry import Polygon as sPolygon
+
+from .global_var import (
+    _POINT_FILTER_OVERRIDING,
+    _R_GRID_,
+    _T_CUT_OFF_LIT,
+    _V_CONVERSION_KM_MYR_,
+)
 
 r_grid = _R_GRID_
 
@@ -176,16 +179,16 @@ class Data_experiment:
 
         if ts:
             # Direct to the time dependent file
-            with h5py.File("%s/time_dependent.h5" % f, "r") as fl:
+            with h5py.File(f"{f}/time_dependent.h5", "r") as fl:
                 for it, time in enumerate(self.times):
-                    field_temp = "/Function/Temperature  [degC]/%s" % time
-                    field_pres = "/Function/Pressure  [GPa]/%s" % time
-                    field_litpres = "/Function/Lit Pres  [GPa]/%s" % time
-                    field_v = "/Function/Velocity  [cm/yr]/%s" % time
+                    field_temp = f"/Function/Temperature  [degC]/{time}"
+                    field_pres = f"/Function/Pressure  [GPa]/{time}"
+                    field_litpres = f"/Function/Lit Pres  [GPa]/{time}"
+                    field_v = f"/Function/Velocity  [cm/yr]/{time}"
 
-                    self.Temp[:, it] = np.array(fl[field_temp]).flatten()
-                    self.Pres[:, it] = np.array(fl[field_pres]).flatten()
-                    self.LitPres[:, it] = np.array(fl[field_litpres]).flatten()
+                    self.Temp[:, it] = np.array(fl[field_temp],dtype=np.float32).flatten()
+                    self.Pres[:, it] = np.array(fl[field_pres],dtype=np.float32).flatten()
+                    self.LitPres[:, it] = np.array(fl[field_litpres],dtype=np.float32).flatten()
 
                     v = np.array(fl[field_v])
                     self.vx[:, it] = v[:, 0]
@@ -193,7 +196,7 @@ class Data_experiment:
 
         else:
             try:
-                f1 = "%s/Steady_state.h5" % f
+                f1 = f"{f}/Steady_state.h5"
                 fl = h5py.File(f1, "r")
                 fl.close()
                 proceed = True
@@ -370,6 +373,12 @@ class MeshData:
             X = np.array(fl["/Mesh/mesh/geometry"])
             
             mesh_tag = np.array(fl["Function/MeshTAG/0"])
+            
+            # convert into np.float32 
+            
+            X = np.float32(X)
+            
+            mesh_tag = np.float32(mesh_tag)
         
         return X, mesh_tag.flatten()  
     # ---
@@ -563,6 +572,38 @@ class Test:
         self.Data_raw = Data_Raw(
             self.path_2_test, num=len(self.MeshData.X[:, 0]), td=td
         )
+        # Check if a timedependent solution
+        if td: 
+            ts = len(self.Data_raw.TimeDependent.time_list)
+        else:
+            ts = 1
+        
+        self.temp = None
+        self.Phase = None
+
+    def update_temp_phase_field(self
+                                ,td:bool=False
+                                ,flag_full:bool=False
+                                ,vc:float=1.0
+                                ,oc_tk:float=6.0
+                                ,dc:float = 80.0)->int:
+        if td:
+            tag_in = 'TimeDependent'
+        else:
+            tag_in = 'SteadyState'
+            
+        self.temp = self.interpolate_data(f'{tag_in}.Temp',flag_full=flag_full)
+        if not td:
+            print('The model is steady state, the phase generation is skipped')
+            return 0 
+        else: 
+            # Update the phase field
+            self.Phase = np.zeros_like(self.temp,dtype=np.int8)
+            
+            self.get_phase_field(vc = vc
+                                              ,oc_tk= oc_tk
+                                              ,dc = dc)
+        return 0
 
     def interpolate_data(self, Data_field:str,flag_full:bool)->NDArray:
         """Interpolate the data on a regular grid for visualisation
@@ -635,11 +676,11 @@ class Test:
         Returns:
             Data_experiment: _description_
         """
-        buf = getattr(self,'Data_raw')
+        buf = self.Data_raw
         if hasattr(buf,'TimeDependent'):
-            return getattr(buf,'TimeDependent')
+            return buf.TimeDependent
         elif hasattr(buf,'SteadyState'):
-            return getattr(buf,'SteadyState')
+            return buf.SteadyState
         else: 
             raise ValueError('There not any data saved.')
 
@@ -805,16 +846,12 @@ class Test:
         # 4 -> clip ocean/bottom slab 
         # 5 -> create poligon 
         # 6 -> build the slab phase field 
-        d = np.array([oc_lt],dtype=np.float32)
         #function inpolygon
 
-        temp = self.interpolate_data('TimeDependent.Temp',True)
-        Ph = temp.copy() * 0
-        ar = Ph.copy()
-        ar = ar[:,:,0]
+        ar = np.zeros(self.temp.shape[:2], dtype=self.temp.dtype)
         ov_ar = self._filter_overriding_plate(dc)
         for i in range(x_pt.shape[0]):
-            temp0 = temp[:,:,i]
+            temp0 = self.temp[:,:,i]
             if i>0 :
                 ar_s = self._track_phase(x_pt=x_pt
                                     ,cdr_s=cdr_s
@@ -825,8 +862,7 @@ class Test:
                 ar[(temp0<_T_CUT_OFF_LIT)] = 1
                 ar[(ar==1) & ( self.MeshData.ar_s==0) & (ov_ar==1)] = 0
                 ar[ar_s ] = 2
-            Ph[:,:,i] = ar[:,:]
-        return Ph
+            self.Phase = ar[:,:]
     # ---
     def get_phase_field(self,vc:float,oc_tk:float,dc:float)->None:
         """Function that generates a time-dependent 
@@ -863,7 +899,7 @@ class Test:
                              'time dependent solutions.')
         else: 
             slab_x, slab_ell = self.MeshData.collect_coordinate(tag= 'ind_topSlab')
-            ocean_x, ocean_ell = self.MeshData.collect_coordinate(tag= 'ind_Oceanic')
+            ocean_x, _ = self.MeshData.collect_coordinate(tag= 'ind_Oceanic')
             # create distance of the top of the surface of the slab
             dist = vc * np.array(drw.TimeDependent.time_list) *_V_CONVERSION_KM_MYR_
             # Compute the coordinate of the top of the slab with time
@@ -871,14 +907,13 @@ class Test:
                                     ,ell_slab=slab_ell
                                     ,dist=dist
                                     ,pt0=np.array([0,0]))
-            Ph = self._create_phase_field(x_pt=x_pt
+            self._create_phase_field(x_pt=x_pt
                         ,icx=icx
                        ,cdr_s=slab_x
                        ,cd_oc=ocean_x
                        ,oc_lt =oc_tk
                        ,dc=self.MeshData.get_coordinate_decoupling(slab_x,-dc))
             
-            return Ph 
             
         
     

@@ -67,13 +67,13 @@ from pathlib import Path
 
 import numpy as np
 from mpi4py import MPI
-
-import post_process_module.global_var as _GVARIABLES_
 from post_process_module.post_process_data import (
     save_test_data,
     save_test_data_td_alt,
     timing_function,
 )
+
+import post_process_module.global_var as _GVARIABLES_
 from post_process_module.utils import (
     change_geometry,
     choose_material_properties,
