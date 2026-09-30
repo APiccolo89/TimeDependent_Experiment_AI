@@ -22,11 +22,8 @@ from importlib.resources import files
 from pathlib import Path
 
 import h5py
-import matplotlib.pyplot as plt
 import numpy as np
-from numpy.typing import NDArray
 
-import post_process_module.global_var as _GVARIABLES_
 from post_process_module.data_extractor import Test
 from post_process_module.utils import choose_material_properties
 

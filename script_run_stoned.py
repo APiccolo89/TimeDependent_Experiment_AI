@@ -56,22 +56,14 @@ Let me know if you want more flexibility and I will promptly modify that piece o
 ===============================
 Written by Andrea Piccolo 21.09.2026 
 """
-
-
 import argparse
 import os
-import shutil
 import time
 from importlib.resources import files
 from pathlib import Path
 
 import numpy as np
 from mpi4py import MPI
-from post_process_module.post_process_data import (
-    save_test_data,
-    save_test_data_td_alt,
-    timing_function,
-)
 
 import post_process_module.global_var as _GVARIABLES_
 from post_process_module.utils import (
@@ -141,7 +133,6 @@ def wrap_stoned(inp, Ph, arguments: dict) -> tuple:
 
     return inp, Ph
 # ---
-@timing_function
 def perform_test(args: dict | None, name_suite: str = "debug") -> tuple[str, str]:
     """Configuration script of StonedFEniCSx for the time-dependent sensitivity
     tests.
@@ -180,8 +171,8 @@ def perform_test(args: dict | None, name_suite: str = "debug") -> tuple[str, str
     inp.ctrl.decoupling_ctrl = 1
     # Choose the mode of stonedFEniCSx
     inp.ctrl.steady_state = 0
-
-    inp.ctrl.tol = 1e-2
+    # Choose the tollerance of the picard iteration
+    inp.ctrl.tol_dtemp = 1e-3
     inp.ctrl.it_max = 10
 
 
@@ -239,7 +230,6 @@ def perform_test(args: dict | None, name_suite: str = "debug") -> tuple[str, str
 
     return inp.ctrl_io.path_test, inp.ctrl_io.test_name
 # ---
-@timing_function
 def configure_run_save():
 
     parser = argparse.ArgumentParser()
@@ -291,9 +281,9 @@ def configure_run_save():
 
     pathtest, _ = perform_test(args=arguments, name_suite=name_suite)
 
-    #print(f"Test completed for group {arguments['case_index']}. Results saved in {pathtest}")
+    print(f"Test completed. Results saved in {pathtest}")
 
-    comm = MPI.COMM_WORLD
+    #comm = MPI.COMM_WORLD
 
 
 if __name__ == "__main__":

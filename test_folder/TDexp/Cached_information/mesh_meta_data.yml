@@ -1,6 +1,6 @@
 cr: 40.0
-decoupling: 80
-lab_d: 80
+decoupling: 80.0
+lab_d: 80.0
 lc: 0.5
 lit_mt: 20.0
 model_full: true

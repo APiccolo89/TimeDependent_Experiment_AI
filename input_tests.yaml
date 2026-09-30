@@ -24,7 +24,7 @@ Input:
     energy_solver_type : "Direct"
     iterative_solver_tol : 1e-9
     pressure_dependency: 0
-    CFL : 4.0
+    CFL : 1.0
     time_ini_guess : 0.4
     initial_guess : "Thermal_Diffusion" 
 
