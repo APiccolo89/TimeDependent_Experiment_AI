@@ -3,3 +3,4 @@
 *.csv
 *.xdmf
 *.pyc
+memory.bin
