@@ -72,6 +72,10 @@ from post_process_module.utils import (
     define_material_properties,
 )
 
+import cProfile
+
+
+
 # --- function "wrap"
 
 
@@ -226,7 +230,13 @@ def perform_test(args: dict | None, name_suite: str = "debug") -> tuple[str, str
     inp.ctrl_io.test_name = f"{args['name_test']}"
 
     # Run the test
+    profiler = cProfile.Profile()
+    profiler.enable()
+
     inp, Ph = wrap_stoned(inp=inp, Ph=Ph, arguments=args)
+
+    profiler.disable()
+    profiler.dump_stats("stoned_profile.prof")
 
     return inp.ctrl_io.path_test, inp.ctrl_io.test_name
 # ---
