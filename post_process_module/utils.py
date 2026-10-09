@@ -165,9 +165,9 @@ def choose_material_properties(k: float) -> dict:
         phase_properties[m]["alpha0"] = 3e-5
 
     # radiogenic heating
-    phase_properties["oceanic_crust"]["radiogenic"] = 0.27e-6
-    phase_properties["upper_crust"]["radiogenic"] = 1e-6
-    phase_properties["lower_crust"]["radiogenic"] = 0.27e-6
+    phase_properties["oceanic_crust"]["radiogenic"] = 0.0
+    phase_properties["upper_crust"]["radiogenic"] = 0.0
+    phase_properties["lower_crust"]["radiogenic"] = 0.0
     phase_properties["mantle"]["radiogenic"] = 0.0
 
     if k in (3.1, 5.0):
